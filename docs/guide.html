@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Prices - Supply and Demand — Features</title>
+<style>
+  :root{
+    --ink:#1f2d3a; --head:#22303c; --muted:#5a6b78; --faint:#6b7a86;
+    --rule:#e6ebee; --card:#c9d4dd; --steel:#3f5b6b; --zebra:#f6f8f9;
+    --box:#f5f7f9; --boxbd:#e0e6ea; --callbg:#eef3f6; --callbar:#3a6b8c;
+    --badge:#2f7d4f;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  body{
+    font-family:"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink); background:#fff; line-height:1.55;
+    max-width:820px; margin:0 auto; padding:34px 30px 60px;
+    font-size:15px;
+  }
+  .card{
+    border:1px solid var(--card); border-radius:10px;
+    padding:30px 28px; text-align:center; margin-bottom:26px;
+  }
+  .card h1{
+    margin:0; font-size:40px; font-weight:800; color:var(--head);
+    letter-spacing:.3px; line-height:1.1;
+  }
+  .card .subtitle{ font-style:italic; color:var(--muted); font-size:17px; margin:10px 0 0; }
+  .card .meta{ font-size:13.5px; color:var(--faint); margin:14px 0 0; }
+  .card .meta b{ color:var(--head); }
+  .badge{
+    display:inline-block; margin-top:14px; background:var(--badge); color:#fff;
+    font-size:11.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+    padding:6px 15px; border-radius:20px;
+  }
+  h2{
+    font-size:22px; color:var(--head); border-bottom:2px solid var(--head);
+    padding-bottom:6px; margin:36px 0 14px;
+  }
+  h3{ font-size:16px; color:var(--head); margin:24px 0 6px; }
+  p{ margin:10px 0; }
+  .callout{
+    background:var(--callbg); border-left:4px solid var(--callbar);
+    padding:13px 18px; border-radius:4px; margin:18px 0;
+  }
+  .recipe{
+    display:inline-block; font-family:"Consolas","Courier New",monospace;
+    background:var(--box); border:1px solid var(--boxbd); border-radius:5px;
+    padding:12px 18px; line-height:1.65; letter-spacing:5px; font-size:15px;
+    white-space:pre;
+  }
+  .legend{ font-size:13px; color:var(--faint); margin:4px 0 0; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; margin:10px 0 20px; }
+  thead th{
+    background:var(--steel); color:#fff; text-align:left; padding:8px 12px;
+    font-weight:600; font-size:13.5px;
+  }
+  tbody td{ padding:8px 12px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  tbody tr:nth-child(even){ background:var(--zebra); }
+  td .def{ color:var(--faint); }
+  code{
+    background:#eef1f3; padding:1px 5px; border-radius:3px;
+    font-family:"Consolas","Courier New",monospace; font-size:90%;
+  }
+  ul{ margin:10px 0; padding-left:22px; }
+  li{ margin:5px 0; }
+  .footer{
+    text-align:center; color:#9aa7b0; font-size:12px;
+    margin-top:44px; border-top:1px solid var(--rule); padding-top:16px;
+  }
+  @page{ margin:14mm; }
+</style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Stock Prices - Supply and Demand</h1>
+    <p class="subtitle">A living, self-balancing economy for your server.</p>
+    <p class="meta">NeoForge 1.21.1 &nbsp;|&nbsp; modid <b>stockprices</b> &nbsp;|&nbsp; v1.1.0 &nbsp;|&nbsp; by Barunn (NewtL) &nbsp;|&nbsp; soft-deps: Spud's Shop, SDM Economy</p>
+    <span class="badge">Live on CurseForge</span>
+  </div>
+
+  <p>Stock Prices is not a shop mod; it is the price engine behind one. Every obtainable item is given a Standard Retail Price (SRP) that is recomputed once per Minecraft day from the live state of the world: how much of it exists (supply), how concentrated it is into a few hands (hoarding), how much money is circulating (inflation), and how much was bought lately (demand). Prices rise when things get scarce, hoarded, or when money floods in, and fall when the world is awash in supply. Players move the market by mining, farming, hoarding in vaults, flooding a good, or cutting off a supply line.</p>
+
+  <p>Press the keybind to open the Market Prices screen and read any item's true value with a 7-day trend arrow. With Spud's Shop installed, a per-stall checkbox hands a stall's price over to the market. With SDM Economy installed, every account balance is totalled into the money pool so bank wealth feeds inflation.</p>
+
+  <div class="callout"><b>Everything is relative to opening day.</b> On the first recompute the engine calibrates its supply and money references so day-one prices equal the base prices; you see movement only after you change the world from that baseline. One easing rate governs every force, so a rise and a crash behave identically: a big shock still resolves within a day or two.</div>
+
+  <h2>The economy model</h2>
+  <p>Every Minecraft day, for each commodity, the engine computes a target price from four forces and eases the live price toward it at a single rate:</p>
+  <div class="recipe">H          = supply / occupiedLocations
+effSupply  = supply / (1 + (H / Hc)^m)
+target     = base
+           * demandFactor(purchases)
+           * (Sref / effSupply)^kS
+           * (money / Mref)^kM
+price     += (target - price) * adjustSpeed</div>
+  <p class="legend">supply / occupiedLocations = average per location (hoarding) &nbsp;•&nbsp; effSupply = circulating supply after piles discount out &nbsp;•&nbsp; Sref, Mref auto-calibrate on first run</p>
+  <ul>
+    <li><b>Supply</b> pulls the price down; <b>scarcity</b> pushes it up when effective supply is low.</li>
+    <li><b>Hoarding</b> is folded into <code>effSupply</code>: a stockpile far above the per-location threshold discounts itself out of circulation, so the price climbs even when the raw total is high. A monopolist dumping their vault causes a hard crash; the same total spread evenly barely moves.</li>
+    <li><b>Money supply</b> inflates every price; more money pooled across the world pushes prices up.</li>
+    <li><b>Demand</b> (buying pressure) pushes prices up. Real purchase tracking needs Spud's Shop; until purchases are seen the demand factor stays neutral.</li>
+    <li>Zero supply clamps at the ceiling; all prices are held within <code>priceFloor</code> and <code>priceCeil</code>.</li>
+  </ul>
+
+  <h2>Supply scanning</h2>
+  <p>The mod keeps its own per-chunk index of every item in container inventories via the item-handler capability. Online players' inventories and ender chests count as distinct locations for the hoarding math (configurable). Scanning is throttled: loaded chunks are queued and only <code>scanBudgetPerTick</code> chunks are scanned per server tick, so joining a world never stalls the load screen. Only chunks that actually contain containers are queued. At the day rollover the loaded chunks are re-scanned before pricing, and the recompute is held until the post-join catch-up scan has fully settled, so a half-built index can never corrupt good prices.</p>
+
+  <h2>Money supply (inflation)</h2>
+  <p>The money pool is the sum of two sources. <b>Physical currency:</b> every currency item in the world, counted at its <code>[currency] denominations</code> value, so hoarding or printing currency inflates every price. <b>SDM Economy balances (optional):</b> with SDM installed and <code>sdmEnabled</code> on, every account balance is totalled in and added on top; which currencies count and what each is worth is set by <code>sdmCurrencies</code>, and locked balances are skipped.</p>
+
+  <h2>Commodities &amp; bills</h2>
+  <p>A commodity is any obtainable item (everything except air, spawn eggs, and a technical blacklist of un-obtainable blocks). Items can be grouped so reversible packing and cross-mod synonyms price as one thing (an iron block is 9 ingots), while one-way processing (ore vs ingot) is kept separate so a smelting bottleneck shows up. The screen shows one honest base-unit number, but when a price is written onto a Spud's stall it is expressed as the fewest of the largest denomination that fits: 1000 becomes 10 diamonds (diamond = 100), not 1000 emeralds.</p>
+
+  <h2>Controls</h2>
+  <table>
+    <thead><tr><th>Action</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td>Open Market Prices screen</td><td><code>\</code> (backslash), rebindable in Controls under the "Stock Prices" category</td></tr>
+    </tbody>
+  </table>
+  <p>The screen has a live search box, a scrollable list, and Name / Price / Movers sort modes. Each item shows one number in the base currency unit plus a 7-day trend glyph: green up, red down, or a gray dash when the change is within the negligible band.</p>
+
+  <h2>Configuration &mdash; <code>config/stockprices-common.toml</code></h2>
+
+  <h3>[formula]</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>concentrationThreshold (Hc)</td><td><span class="def">64.0</span></td><td>Average-per-location level at which hoarding starts seriously biting. Lower = hoarding bites sooner.</td></tr>
+      <tr><td>concentrationExponent (m)</td><td><span class="def">1.1</span></td><td>How sharply hoarding bites past the threshold. Higher = a monopoly spikes the price harder.</td></tr>
+      <tr><td>scarcitySensitivity (kS)</td><td><span class="def">1.0</span></td><td>How hard scarcity pulls the price. 1.0 = price inversely proportional to effective supply.</td></tr>
+      <tr><td>demandSensitivity (kD)</td><td><span class="def">0.5</span></td><td>How hard buying pressure pulls the price up.</td></tr>
+      <tr><td>moneySensitivity (kM)</td><td><span class="def">1.0</span></td><td>How hard total money supply inflates prices. 1.0 = doubling money doubles prices.</td></tr>
+      <tr><td>adjustSpeed</td><td><span class="def">0.5</span></td><td>How far the live price moves toward its target each day (0..1). One rate for every force.</td></tr>
+      <tr><td>demandReferencePurchases (Pref)</td><td><span class="def">20</span></td><td>Daily purchase count treated as "normal" demand. Real tracking needs Spud's Shop.</td></tr>
+      <tr><td>priceFloor</td><td><span class="def">1.0</span></td><td>Lowest an SRP can fall to, in base units.</td></tr>
+      <tr><td>priceCeil</td><td><span class="def">100000.0</span></td><td>Highest an SRP can rise to; also where a zero-supply item lands.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>[pricing]</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>defaultBasePrice</td><td><span class="def">10.0</span></td><td>Base (neutral-market) price for any commodity without an override.</td></tr>
+      <tr><td>basePrices</td><td><span class="def">diamond=80, iron_ingot=12, netherite_ingot=900</span></td><td>Per-commodity base prices, one <code>&lt;itemId&gt;=&lt;price&gt;</code> per entry. For a group, use its representative (first) member.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>[trend]</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>trendWindowDays</td><td><span class="def">7</span></td><td>How many days the trend arrow compares against (rolling average window).</td></tr>
+      <tr><td>trendNegligiblePercent</td><td><span class="def">2.0</span></td><td>Within +/- this percent of the rolling average, the trend shows a flat dash.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>[commodity]</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>groups</td><td><span class="def">iron / gold / diamond / raw_iron / copper packing groups</span></td><td>Comma-separated <code>&lt;itemId&gt;=&lt;weight&gt;</code> lists; first member is representative. Use for synonyms and reversible packing; keep one-way processing separate.</td></tr>
+      <tr><td>forceInclude</td><td><span class="def">(empty)</span></td><td>Items the auto-detector missed that you want priced anyway. One <code>&lt;itemId&gt;</code> per entry.</td></tr>
+      <tr><td>forceExclude</td><td><span class="def">bedrock, barrier, command_block, structure_block, structure_void, jigsaw, debug_stick, light, knowledge_book</span></td><td>Items the detector wrongly grabbed. Spawn eggs and air are excluded automatically.</td></tr>
+      <tr><td>countEnderChests</td><td><span class="def">true</span></td><td>Count items in online players' ender chests toward supply.</td></tr>
+      <tr><td>countPlayerInventories</td><td><span class="def">true</span></td><td>Count items in online players' inventories toward supply.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>[currency]</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>baseUnitName</td><td><span class="def">credit</span></td><td>Name of the base currency unit the keybind shows the true value in.</td></tr>
+      <tr><td>denominations</td><td><span class="def">netherite_ingot=10000, diamond=100, emerald=1</span></td><td>Two-way. (1) Bills: an SRP is written as the fewest of the largest coin that fits. (2) Money: every such item in the world is counted as money at this value, so hoarding or printing currency inflates prices.</td></tr>
+      <tr><td>sdmCurrencies</td><td><span class="def">(empty)</span></td><td>Which SDM account currencies to total into the money pool. One <code>&lt;name&gt;=&lt;value&gt;</code> per entry. EMPTY = count every SDM currency at face value. Added on top of the physical pool; locked balances skipped.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>[performance]</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>scanBudgetPerTick</td><td><span class="def">8</span></td><td>Loaded chunks are queued and this many are scanned per server tick (20/sec), so the index fills gradually instead of stalling the load screen.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>[integration]</h3>
+  <table>
+    <thead><tr><th>Key</th><th>Default</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>spudsEnabled</td><td><span class="def">true</span></td><td>Integrate with Spud's Shop if present (read purchases for demand, optionally write SRP).</td></tr>
+      <tr><td>spudsPushPrices</td><td><span class="def">true</span></td><td>When a Spud's stall is toggled to SRP, write the computed price onto it each day.</td></tr>
+      <tr><td>sdmEnabled</td><td><span class="def">true</span></td><td>Read SDM Economy balances and add them to the money pool. Needs SDM Economy installed.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Compatibility</h2>
+  <p>All integrations are optional soft dependencies, guarded by a runtime <code>ModList.isLoaded</code> check and never bundled.</p>
+  <ul>
+    <li><b>Spud's Shop</b> (<code>spudaciousshops</code>): a checkbox in the stall owner screen toggles that stall to SRP mode; when on, the daily recompute writes the computed price (as denominated bills) onto the stall. Toggle state persists.</li>
+    <li><b>SDM Economy</b> (<code>sdmeconomy</code>): account balances are totalled into the money pool, feeding inflation. Uses SDM's public economy API; on any error it falls back to a neutral value.</li>
+    <li><b>SDM Shop</b> (<code>sdmshop</code>): listed as an optional dependency in the mod metadata.</li>
+  </ul>
+
+  <h2>Commands</h2>
+  <table>
+    <thead><tr><th>Command</th><th>Permission</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>/stockprices market</td><td>all players</td><td>Open the Market Prices screen.</td></tr>
+      <tr><td>/stockprices info</td><td>all players</td><td>Inspect the held item: weighted supply, hoarding H, effective supply, baseline sref, base price, current SRP, money pool.</td></tr>
+      <tr><td>/stockprices recompute</td><td>op (level 2)</td><td>Re-scan loaded chunks and recompute the whole market now.</td></tr>
+      <tr><td>/stockprices reload</td><td>op (level 2)</td><td>Rebuild the commodity registry from config.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Building</h2>
+  <div class="recipe">./gradlew build</div>
+  <p>Output jar in <code>build/libs/</code> (<code>stockprices-neoforge-1.1.0.jar</code>). Requires JDK 21. The Spud's Shop and SDM Economy jars in <code>libs/</code> are <code>compileOnly</code> local copies of the published mods; they are never bundled and are not redistributed with this repository.</p>
+
+  <p class="footer">Stock Prices - Supply and Demand • NeoForge 1.21.1 • modid stockprices • v1.1.0</p>
+
+</body>
+</html>
